@@ -14,6 +14,11 @@ import {
     evaluateParticipants,
 } from "../src/domain/evaluator.js";
 
+
+const activityMap = new Map(
+    activities.map((activity) => [activity.id, activity])
+);
+
 function parseAll(data) {
     return data.map(parseParticipant);
 }
@@ -55,7 +60,7 @@ describe("eligibility evaluation", () => {
 
         const result = evaluateParticipant(
             participant,
-            activities,
+            activityMap,
             ELIGIBILITY_POLICY
         );
 
@@ -74,7 +79,7 @@ describe("eligibility evaluation", () => {
 
         const result = evaluateParticipant(
             participant,
-            activities,
+            activityMap,
             ELIGIBILITY_POLICY
         );
 
@@ -127,6 +132,33 @@ describe("eligibility evaluation", () => {
             "C03",
             "C04",
             "C05",
+        ]);
+    });
+
+    
+    test("eligibility respects a changed point threshold", () => {
+        const participant = parseParticipant({
+            id: "C01",
+            name: "Asha",
+            completedActivities: "A01, A02, A03",
+        });
+
+        const customPolicy = {
+            minimumPoints: 8,
+            requiredCategories: ["LEARN", "BUILD", "SHARE"],
+        };
+
+        const result = evaluateParticipant(
+            participant,
+            activityMap,
+            customPolicy
+        );
+
+        expect(result.totalPoints).toBe(7);
+        expect(result.eligible).toBe(false);
+
+        expect(result.reasons).toEqual([
+            "POINTS_BELOW_8",
         ]);
     });
 });

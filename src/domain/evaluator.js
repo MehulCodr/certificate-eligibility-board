@@ -1,8 +1,4 @@
-export function evaluateParticipant(participant, activities, policy) {
-  const activityMap = new Map(
-    activities.map((activity) => [activity.id, activity])
-  );
-
+export function evaluateParticipant(participant, activityMap, policy) {
   let totalPoints = 0;
   const coveredCategories = new Set();
 
@@ -17,7 +13,8 @@ export function evaluateParticipant(participant, activities, policy) {
     (category) => !coveredCategories.has(category)
   );
 
-  const meetsPointThreshold = totalPoints >= policy.minimumPoints;
+  const meetsPointThreshold =
+    totalPoints >= policy.minimumPoints;
 
   const eligible =
     missingCategories.length === 0 &&
@@ -45,8 +42,12 @@ export function evaluateParticipant(participant, activities, policy) {
 }
 
 export function evaluateParticipants(participants, activities, policy) {
+  const activityMap = new Map(
+    activities.map((activity) => [activity.id, activity])
+  );
+
   const results = participants.map((participant) =>
-    evaluateParticipant(participant, activities, policy)
+    evaluateParticipant(participant, activityMap, policy)
   );
 
   return results.sort((a, b) => {
