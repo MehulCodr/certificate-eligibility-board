@@ -260,14 +260,62 @@ function renderValidationErrors(errors) {
   `;
 }
 
+function renderCategoryProgress(coveredCategorySet) {
+  const requiredCategories =
+    ELIGIBILITY_POLICY.requiredCategories;
+
+  const segments = requiredCategories
+    .map((category) => {
+      const isCovered = coveredCategorySet.has(category);
+
+      return `
+        <span
+          class="category-segment ${isCovered
+            ? "category-segment-covered"
+            : ""
+          }"
+          title="${category}: ${isCovered
+            ? "covered"
+            : "missing"
+          }"
+          aria-hidden="true"
+        >
+          ${category}
+        </span>
+      `;
+    })
+    .join("");
+
+  const coveredCount = requiredCategories.filter(
+    (category) => coveredCategorySet.has(category)
+  ).length;
+
+  return `
+    <div
+      class="category-progress-strip"
+      role="img"
+      style="--category-count: ${requiredCategories.length}"
+      aria-label="${coveredCount} of ${requiredCategories.length} required categories covered"
+    >
+      ${segments}
+    </div>
+  `;
+}
+
 function renderResults(results) {
   const rows = results
     .map((result) => {
-      const categoryCount =
-        result.coveredCategories.length;
-
       const requiredCategoryCount =
         ELIGIBILITY_POLICY.requiredCategories.length;
+
+      const coveredCategorySet = new Set(
+        result.coveredCategories
+      );
+
+      const categoryCount =
+        ELIGIBILITY_POLICY.requiredCategories.filter(
+          (category) => coveredCategorySet.has(category)
+        ).length;
 
       const minimumPoints =
         ELIGIBILITY_POLICY.minimumPoints;
@@ -278,12 +326,9 @@ function renderResults(results) {
 
           <td>
             ${categoryCount} / ${requiredCategoryCount}
-            <br>
-
-            <progress
-              value="${categoryCount}"
-              max="${requiredCategoryCount}"
-            ></progress>
+            ${renderCategoryProgress(
+              coveredCategorySet
+            )}
           </td>
 
           <td>
