@@ -12,3 +12,17 @@ body {
 main {
   padding: 32px;
 }
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.participant-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+button {
+  cursor: pointer;
+}

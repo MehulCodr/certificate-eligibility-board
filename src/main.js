@@ -22,10 +22,21 @@ function render() {
         ${renderActivities()}
       </section>
 
-      <section>
+    <section>
         <h2>Participants</h2>
+
         ${renderParticipants()}
-      </section>
+
+        <div class="participant-actions">
+          <button id="add-participant-button" type="button">
+            Add Participant Row
+          </button>
+
+          <button id="delete-participant-button" type="button">
+            Delete Participant Row
+          </button>
+        </div>
+    </section>
 
       <div class="actions">
         <button id="evaluate-button">Evaluate</button>
@@ -127,6 +138,13 @@ function attachEventListeners() {
   const inputs = document.querySelectorAll(
     "#app input[data-index]"
   );
+  document
+  .querySelector("#add-participant-button")
+  .addEventListener("click", handleAddParticipant);
+
+  document
+  .querySelector("#delete-participant-button")
+  .addEventListener("click", handleDeleteParticipant);
 
   for (const input of inputs) {
     input.addEventListener("input", (event) => {
@@ -215,11 +233,10 @@ function renderResults(results) {
           <td>${result.coveredCategories.join(", ")}</td>
           <td>${result.eligible ? "ELIGIBLE" : "INELIGIBLE"}</td>
           <td>
-            ${
-              result.reasons.length > 0
-                ? result.reasons.join(", ")
-                : "-"
-            }
+            ${result.reasons.length > 0
+          ? result.reasons.join(", ")
+          : "-"
+        }
           </td>
         </tr>
       `
@@ -246,6 +263,23 @@ function renderResults(results) {
     </table>
   `;
 }
+function handleAddParticipant() {
+  currentParticipants.push({
+    id: "",
+    name: "",
+    completedActivities: "",
+  });
 
+  render();
+}
+function handleDeleteParticipant() {
+  if (currentParticipants.length === 0) {
+    return;
+  }
+
+  currentParticipants.pop();
+
+  render();
+}
 
 render();
