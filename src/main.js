@@ -39,9 +39,13 @@ function render() {
     </section>
 
       <div class="actions">
-        <button id="evaluate-button">Evaluate</button>
-        <button id="reset-button">Reset</button>
-      </div>
+      <button id="sample-button">
+      Load & Evaluate Sample
+      </button>
+
+      <button id="evaluate-button">Evaluate</button>
+      <button id="reset-button">Reset</button>
+    </div>
 
       <div id="validation"></div>
       <div id="summary"></div>
@@ -140,12 +144,12 @@ function attachEventListeners() {
     "#app input[data-index]"
   );
   document
-  .querySelector("#add-participant-button")
-  .addEventListener("click", handleAddParticipant);
+    .querySelector("#add-participant-button")
+    .addEventListener("click", handleAddParticipant);
 
   document
-  .querySelector("#delete-participant-button")
-  .addEventListener("click", handleDeleteParticipant);
+    .querySelector("#delete-participant-button")
+    .addEventListener("click", handleDeleteParticipant);
 
   for (const input of inputs) {
     input.addEventListener("input", (event) => {
@@ -154,8 +158,14 @@ function attachEventListeners() {
 
       currentParticipants[index][field] =
         event.target.value;
+
+      clearEvaluationOutput();
     });
   }
+
+  document
+    .querySelector("#sample-button")
+    .addEventListener("click", handleLoadSample);
 
   document
     .querySelector("#evaluate-button")
@@ -166,10 +176,19 @@ function attachEventListeners() {
     .addEventListener("click", handleReset);
 }
 
+function clearEvaluationOutput() {
+  document.querySelector("#validation").innerHTML = "";
+  document.querySelector("#summary").innerHTML = "";
+  document.querySelector("#results").innerHTML = "";
+}
+
+
 function handleReset() {
   currentParticipants = getInitialParticipants();
   render();
 }
+
+
 function handleEvaluate() {
   const parsedParticipants =
     currentParticipants.map(parseParticipant);
@@ -205,12 +224,22 @@ function renderValidationErrors(errors) {
     .map((error) => {
       let message = error.code;
 
-      if (error.participant) {
-        message += ` | Participant: ${error.participant}`;
+      if ("participant" in error) {
+        const participant =
+          error.participant === ""
+            ? '""'
+            : error.participant;
+
+        message += ` | Participant: ${participant}`;
       }
 
-      if (error.value) {
-        message += ` | Value: ${error.value}`;
+      if ("value" in error) {
+        const value =
+          error.value === ""
+            ? '""'
+            : error.value;
+
+        message += ` | Value: ${value}`;
       }
 
       return `<li>${message}</li>`;
@@ -257,9 +286,9 @@ function renderResults(results) {
 
             <progress
               value="${Math.min(
-                result.totalPoints,
-                minimumPoints
-              )}"
+        result.totalPoints,
+        minimumPoints
+      )}"
               max="${minimumPoints}"
             ></progress>
           </td>
@@ -269,11 +298,10 @@ function renderResults(results) {
           </td>
 
           <td>
-            ${
-              result.reasons.length > 0
-                ? result.reasons.join(", ")
-                : "-"
-            }
+            ${result.reasons.length > 0
+          ? result.reasons.join(", ")
+          : "-"
+        }
           </td>
         </tr>
       `;
@@ -343,4 +371,13 @@ function renderSummary(results) {
     </div>
   `;
 }
+
+function handleLoadSample() {
+  currentParticipants = getInitialParticipants();
+
+  render();
+
+  handleEvaluate();
+}
+
 render();

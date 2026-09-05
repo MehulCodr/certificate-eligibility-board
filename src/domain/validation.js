@@ -8,24 +8,36 @@ export function validateParticipants(participants, activities) {
   const seenParticipantIds = new Set();
 
   for (const participant of participants) {
-    if (!participant.id || !participant.name) {
+    // Validate participant ID
+    if (!participant.id) {
       errors.push({
         code: "INVALID_PARTICIPANT",
-        participant: participant.id,
-      });
-
-      continue;
-    }
-
-    if (seenParticipantIds.has(participant.id)) {
-      errors.push({
-        code: "DUPLICATE_PARTICIPANT_ID",
         participant: participant.id,
         value: participant.id,
       });
     }
 
-    seenParticipantIds.add(participant.id);
+    // Validate participant name
+    if (!participant.name) {
+      errors.push({
+        code: "INVALID_PARTICIPANT",
+        participant: participant.id,
+        value: participant.name,
+      });
+    }
+
+    // Only check duplicate IDs when the ID itself is valid
+    if (participant.id) {
+      if (seenParticipantIds.has(participant.id)) {
+        errors.push({
+          code: "DUPLICATE_PARTICIPANT_ID",
+          participant: participant.id,
+          value: participant.id,
+        });
+      }
+
+      seenParticipantIds.add(participant.id);
+    }
 
     const seenActivities = new Set();
 
