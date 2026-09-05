@@ -15,7 +15,13 @@ let currentParticipants = getInitialParticipants();
 function render() {
   document.querySelector("#app").innerHTML = `
     <main>
+      <div class="page-header">
       <h1>Certificate Eligibility Board</h1>
+      <p>
+        Evaluate certificate eligibility using activity
+        categories and total points.
+      </p>
+      </div>
 
       <section>
         <h2>Activities</h2>
@@ -294,14 +300,21 @@ function renderResults(results) {
           </td>
 
           <td>
+            <span class="status-badge ${result.eligible
+          ? "status-eligible"
+          : "status-ineligible"
+        }">
             ${result.eligible ? "ELIGIBLE" : "INELIGIBLE"}
+            </span>
           </td>
 
           <td>
-            ${result.reasons.length > 0
-          ? result.reasons.join(", ")
-          : "-"
-        }
+            <span class="reason-text">
+              ${result.reasons.length > 0
+              ? result.reasons.join(", ")
+              : "—"
+              }
+            </span>
           </td>
         </tr>
       `;
