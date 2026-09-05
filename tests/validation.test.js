@@ -1,9 +1,15 @@
 import { describe, expect, test } from "vitest";
 
-import { activities, participants } from "../src/data/sampleData.js";
+import {
+    activities,
+    participants,
+    getInitialParticipants,
+} from "../src/data/sampleData.js";
+
+import { ELIGIBILITY_POLICY } from "../src/constants.js";
 import { parseParticipant } from "../src/domain/parser.js";
 import { validateParticipants } from "../src/domain/validation.js";
-
+import { evaluateParticipant,evaluateParticipants } from "../src/domain/evaluator.js";
 function parseAll(data) {
   return data.map(parseParticipant);
 }
