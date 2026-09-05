@@ -26,3 +26,13 @@ main {
 button {
   cursor: pointer;
 }
+
+.summary {
+  display: flex;
+  gap: 24px;
+  margin: 20px 0;
+}
+
+progress {
+  width: 120px;
+}

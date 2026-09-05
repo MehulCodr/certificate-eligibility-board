@@ -44,6 +44,7 @@ function render() {
       </div>
 
       <div id="validation"></div>
+      <div id="summary"></div>
       <div id="results"></div>
     </main>
   `;
@@ -169,7 +170,6 @@ function handleReset() {
   currentParticipants = getInitialParticipants();
   render();
 }
-
 function handleEvaluate() {
   const parsedParticipants =
     currentParticipants.map(parseParticipant);
@@ -182,6 +182,7 @@ function handleEvaluate() {
   if (errors.length > 0) {
     renderValidationErrors(errors);
 
+    document.querySelector("#summary").innerHTML = "";
     document.querySelector("#results").innerHTML = "";
 
     return;
@@ -195,6 +196,7 @@ function handleEvaluate() {
 
   document.querySelector("#validation").innerHTML = "";
 
+  renderSummary(results);
   renderResults(results);
 }
 
@@ -225,22 +227,57 @@ function renderValidationErrors(errors) {
 
 function renderResults(results) {
   const rows = results
-    .map(
-      (result) => `
+    .map((result) => {
+      const categoryCount =
+        result.coveredCategories.length;
+
+      const requiredCategoryCount =
+        ELIGIBILITY_POLICY.requiredCategories.length;
+
+      const minimumPoints =
+        ELIGIBILITY_POLICY.minimumPoints;
+
+      return `
         <tr>
           <td>${result.participantId}</td>
-          <td>${result.totalPoints}</td>
-          <td>${result.coveredCategories.join(", ")}</td>
-          <td>${result.eligible ? "ELIGIBLE" : "INELIGIBLE"}</td>
+
           <td>
-            ${result.reasons.length > 0
-          ? result.reasons.join(", ")
-          : "-"
-        }
+            ${categoryCount} / ${requiredCategoryCount}
+            <br>
+
+            <progress
+              value="${categoryCount}"
+              max="${requiredCategoryCount}"
+            ></progress>
+          </td>
+
+          <td>
+            ${result.totalPoints} / ${minimumPoints}
+            <br>
+
+            <progress
+              value="${Math.min(
+                result.totalPoints,
+                minimumPoints
+              )}"
+              max="${minimumPoints}"
+            ></progress>
+          </td>
+
+          <td>
+            ${result.eligible ? "ELIGIBLE" : "INELIGIBLE"}
+          </td>
+
+          <td>
+            ${
+              result.reasons.length > 0
+                ? result.reasons.join(", ")
+                : "-"
+            }
           </td>
         </tr>
-      `
-    )
+      `;
+    })
     .join("");
 
   document.querySelector("#results").innerHTML = `
@@ -250,8 +287,8 @@ function renderResults(results) {
       <thead>
         <tr>
           <th>Participant</th>
-          <th>Points</th>
-          <th>Categories</th>
+          <th>Category Progress</th>
+          <th>Point Progress</th>
           <th>Status</th>
           <th>Reasons</th>
         </tr>
@@ -263,6 +300,8 @@ function renderResults(results) {
     </table>
   `;
 }
+
+
 function handleAddParticipant() {
   currentParticipants.push({
     id: "",
@@ -282,4 +321,26 @@ function handleDeleteParticipant() {
   render();
 }
 
+function renderSummary(results) {
+  const eligibleCount = results.filter(
+    (result) => result.eligible
+  ).length;
+
+  const ineligibleCount =
+    results.length - eligibleCount;
+
+  document.querySelector("#summary").innerHTML = `
+    <div class="summary">
+      <div>
+        <strong>Eligible:</strong>
+        ${eligibleCount}
+      </div>
+
+      <div>
+        <strong>Ineligible:</strong>
+        ${ineligibleCount}
+      </div>
+    </div>
+  `;
+}
 render();
