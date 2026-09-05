@@ -52,3 +52,9 @@ export const participants = [
     completedActivities: "A01, A03",
   },
 ];
+
+export function getInitialParticipants() {
+  return participants.map((participant) => ({
+    ...participant,
+  }));
+}

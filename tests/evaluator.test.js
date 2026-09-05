@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import {
     activities,
     participants,
+    getInitialParticipants,
 } from "../src/data/sampleData.js";
 
 import { ELIGIBILITY_POLICY } from "../src/constants.js";
@@ -135,7 +136,7 @@ describe("eligibility evaluation", () => {
         ]);
     });
 
-    
+
     test("eligibility respects a changed point threshold", () => {
         const participant = parseParticipant({
             id: "C01",
@@ -160,5 +161,13 @@ describe("eligibility evaluation", () => {
         expect(result.reasons).toEqual([
             "POINTS_BELOW_8",
         ]);
+    });
+
+    test("initial participants are returned as a fresh copy", () => {
+        const copy = getInitialParticipants();
+
+        copy[0].name = "Changed";
+
+        expect(participants[0].name).toBe("Asha");
     });
 });
