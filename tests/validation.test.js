@@ -89,4 +89,17 @@ describe("participant validation", () => {
 
     expect(errors[0].code).toBe("INVALID_PARTICIPANT");
   });
+  test("detects empty participant name", () => {
+    const data = [
+      {
+        id: "   ",
+        name: " Mehul  ",
+        completedActivities: "A01, A05",
+      },
+    ];
+
+    const errors = validateParticipants(parseAll(data), activities);
+
+    expect(errors[0].code).toBe("INVALID_PARTICIPANT");
+  });
 });
