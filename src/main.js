@@ -93,6 +93,8 @@ function renderActivities() {
 function attachEventListeners() {
   attachParticipantEventListeners({
     onAddParticipant: handleAddParticipant,
+    onCompletedActivitiesChange:
+      handleCompletedActivitiesChange,
     onDeleteParticipant: handleDeleteParticipant,
     onParticipantInput: handleParticipantInput,
   });
@@ -113,6 +115,11 @@ function attachEventListeners() {
 function handleParticipantInput(index, field, value) {
   currentParticipants[index][field] = value;
   clearEvaluationOutput();
+}
+
+function handleCompletedActivitiesChange(index, value) {
+  currentParticipants[index].completedActivities = value;
+  render();
 }
 
 function handleReset() {

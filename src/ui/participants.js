@@ -1,3 +1,29 @@
+import { parseParticipant } from "../domain/parser.js";
+
+function renderActivityChips(participant) {
+  return parseParticipant(participant).completedActivities
+    .map(
+      (activityId, activityIndex) => `
+        <span class="completed-activity-chip">
+          <span class="completed-activity-value">${activityId}</span>
+          <button
+            class="remove-activity-button"
+            type="button"
+            data-activity-index="${activityIndex}"
+            aria-label="Remove ${activityId}"
+          >×</button>
+        </span>
+      `
+    )
+    .join("");
+}
+
+function getActivityIds(activityInput) {
+  return [...activityInput.querySelectorAll(
+    ".completed-activity-value"
+  )].map((chip) => chip.textContent);
+}
+
 export function renderParticipants(participants) {
   const rows = participants
     .map(
@@ -20,11 +46,27 @@ export function renderParticipants(participants) {
           </td>
 
           <td>
-            <input
-              data-index="${index}"
-              data-field="completedActivities"
-              value="${participant.completedActivities}"
-            />
+            <div
+              class="completed-activities-input"
+              data-participant-index="${index}"
+            >
+              <div class="completed-activity-chips">
+                ${renderActivityChips(participant)}
+              </div>
+
+              <div class="add-activity-control">
+                <input
+                  class="activity-id-input"
+                  type="text"
+                  placeholder="Activity ID"
+                  aria-label="Activity ID to add"
+                />
+                <button
+                  class="add-activity-button"
+                  type="button"
+                >Add</button>
+              </div>
+            </div>
           </td>
         </tr>
       `
@@ -32,7 +74,7 @@ export function renderParticipants(participants) {
     .join("");
 
   return `
-    <section>
+    <section id="participants-section">
       <h2>Participants</h2>
 
       <table>
@@ -84,39 +126,72 @@ export function renderParticipants(participants) {
 
 export function attachParticipantEventListeners({
   onAddParticipant,
+  onCompletedActivitiesChange,
   onDeleteParticipant,
   onParticipantInput,
 }) {
-  document
-    .querySelector("#add-participant-button")
-    .addEventListener("click", onAddParticipant);
-
-  document
-    .querySelector("#delete-participant-button")
-    .addEventListener("click", () => {
-      const participantId = document
-        .querySelector("#delete-participant-id")
-        .value.trim();
-
-      onDeleteParticipant(participantId);
-    });
-
-  const inputs = document.querySelectorAll(
-    "#app input[data-index]"
+  const section = document.querySelector(
+    "#participants-section"
   );
 
-  for (const input of inputs) {
-    input.addEventListener("input", (event) => {
-      const index = Number(event.target.dataset.index);
-      const field = event.target.dataset.field;
-
+  section.addEventListener("input", (event) => {
+    if (event.target.matches("input[data-index]")) {
       onParticipantInput(
-        index,
-        field,
+        Number(event.target.dataset.index),
+        event.target.dataset.field,
         event.target.value
       );
-    });
-  }
+    }
+  });
+
+  section.addEventListener("click", (event) => {
+    if (event.target.matches("#add-participant-button")) {
+      onAddParticipant();
+      return;
+    }
+
+    if (event.target.matches("#delete-participant-button")) {
+      onDeleteParticipant(
+        section.querySelector("#delete-participant-id")
+          .value.trim()
+      );
+      return;
+    }
+
+    const activityInput = event.target.closest(
+      ".completed-activities-input"
+    );
+
+    if (!activityInput) return;
+
+    const participantIndex = Number(
+      activityInput.dataset.participantIndex
+    );
+    const activityIds = getActivityIds(activityInput);
+
+    if (event.target.matches(".add-activity-button")) {
+      const activityId = activityInput.querySelector(
+        ".activity-id-input"
+      ).value.trim();
+
+      if (!activityId) return;
+      activityIds.push(activityId);
+    } else if (event.target.matches(
+      ".remove-activity-button"
+    )) {
+      activityIds.splice(
+        Number(event.target.dataset.activityIndex),
+        1
+      );
+    } else {
+      return;
+    }
+
+    onCompletedActivitiesChange(
+      participantIndex,
+      activityIds.join(", ")
+    );
+  });
 }
 
 export function showParticipantNotFound() {
