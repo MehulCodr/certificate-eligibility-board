@@ -54,22 +54,29 @@ export function renderParticipants(participants) {
           Add Participant Row
         </button>
 
-        <input
-          id="delete-participant-id"
-          type="text"
-          placeholder="Participant ID to delete"
-          aria-label="Participant ID to delete"
-        />
+        <div class="delete-participant-control">
+          <label for="delete-participant-id">
+            Delete participant by ID
+          </label>
 
-        <button id="delete-participant-button" type="button">
-          Delete Participant Row
-        </button>
+          <div class="delete-participant-input-group">
+            <input
+              id="delete-participant-id"
+              type="text"
+              placeholder="Participant ID"
+            />
 
-        <span
-          id="delete-participant-feedback"
-          role="status"
-          aria-live="polite"
-        ></span>
+            <button id="delete-participant-button" type="button">
+              Delete Participant
+            </button>
+          </div>
+
+          <span
+            id="delete-participant-feedback"
+            role="status"
+            aria-live="polite"
+          ></span>
+        </div>
       </div>
     </section>
   `;

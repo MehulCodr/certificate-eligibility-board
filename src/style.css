@@ -143,17 +143,39 @@ button:active {
 .participant-actions {
   margin-top: 16px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 10px;
 }
 
+.delete-participant-control {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.delete-participant-control label {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.delete-participant-input-group {
+  display: flex;
+}
+
 #delete-participant-id {
-  width: 160px;
+  width: 170px;
+  border-radius: 7px 0 0 7px;
 }
 
 #delete-participant-feedback {
+  position: absolute;
+  top: 100%;
+  margin-top: 4px;
   color: #b42318;
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .actions {
@@ -191,8 +213,11 @@ button:active {
 }
 
 #delete-participant-button {
+  margin-left: -1px;
+  border-radius: 0 7px 7px 0;
   color: #b42318;
   border-color: #f0b4ad;
+  white-space: nowrap;
 }
 
 #delete-participant-button:hover {
@@ -368,12 +393,25 @@ progress::-moz-progress-bar {
     flex-direction: column;
   }
 
+  .participant-actions {
+    align-items: stretch;
+  }
+
+  .delete-participant-control,
+  .delete-participant-input-group {
+    width: 100%;
+  }
+
   button {
     width: 100%;
   }
 
   #delete-participant-id {
     width: 100%;
+  }
+
+  #delete-participant-button {
+    width: auto;
   }
 
   table {
