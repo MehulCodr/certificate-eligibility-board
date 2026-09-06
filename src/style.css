@@ -143,7 +143,17 @@ button:active {
 .participant-actions {
   margin-top: 16px;
   display: flex;
+  align-items: center;
   gap: 10px;
+}
+
+#delete-participant-id {
+  width: 160px;
+}
+
+#delete-participant-feedback {
+  color: #b42318;
+  font-size: 13px;
 }
 
 .actions {
@@ -359,6 +369,10 @@ progress::-moz-progress-bar {
   }
 
   button {
+    width: 100%;
+  }
+
+  #delete-participant-id {
     width: 100%;
   }
 
