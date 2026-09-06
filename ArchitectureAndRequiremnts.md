@@ -50,7 +50,20 @@ Before selecting technologies, I prioritized the following:
 
 ---
 
-# 3. Final Technology Stack
+# 3. Design Constraints and Technology Choices
+
+The architecture discussion with AI used these explicit constraints:
+
+- one local screen with in-memory data only
+- no React, TypeScript, backend, database, authentication, or remote API
+- no generic rule engine for only two eligibility rules
+- pure domain functions separated from DOM rendering
+- one policy object as the source of eligibility thresholds and categories
+- exact, deterministic validation errors, failure reasons, and result ordering
+- unknown and duplicate activity IDs must remain representable in the UI
+- use standard browser features and JavaScript collections before adding libraries
+- introduce modules only when a file has a clear second responsibility
+- keep every choice explainable and modifiable during a live interview
 
 | Area | Technology | Why |
 |---|---|---|
@@ -59,8 +72,8 @@ Before selecting technologies, I prioritized the following:
 | Application Logic | Vanilla JavaScript ES6+ | Lightweight, understandable, and easy to modify live |
 | Build Tool | Vite | Modern development server, ES modules, fast refresh, production build |
 | Testing | Vitest | Lightweight automated testing with good Vite integration |
-| Code Quality | ESLint | Detects common JavaScript problems and enforces consistency |
-| Contracts / Documentation | JSDoc | Documents data structures and function contracts without TypeScript |
+| Verification | Vitest and Vite build | Confirms domain behavior and production compilation |
+| Documentation | Markdown | Records requirements, architecture, prompts, decisions, and test evidence |
 | Data Storage | In-memory JavaScript objects | Matches the local-only problem requirement |
 | Activity Lookup | `Map` | Fast and clear lookup by activity ID |
 | Category Tracking | `Set` | Naturally represents unique category coverage |
@@ -109,19 +122,7 @@ TypeScript was considered for:
 - Explicit interfaces
 - Safer domain models
 
-For the current scope, JavaScript with JSDoc provides enough clarity while keeping live modification simple.
-
-Example:
-
-```js
-/**
- * @typedef {Object} Activity
- * @property {string} id
- * @property {string} name
- * @property {"LEARN"|"BUILD"|"SHARE"} category
- * @property {number} points
- */
-```
+For the current scope, small JavaScript modules, descriptive result objects, and focused tests provide enough clarity while keeping live modification simple.
 
 ### Decision
 
@@ -129,7 +130,7 @@ Example:
 
 ### Interview Explanation
 
-> TypeScript would be a reasonable choice for a larger application. For this compact problem, I preferred JavaScript because rapid live modification is important. I still documented domain contracts through JSDoc so inputs and outputs remain explicit.
+> TypeScript would be reasonable for a larger application. For this compact problem, I preferred JavaScript because rapid live modification is important. Function boundaries, structured result objects, tests, and Markdown documentation keep the current contracts understandable.
 
 ---
 
@@ -184,7 +185,7 @@ This keeps business logic independent from presentation logic.
 
 ---
 
-# 6. Proposed Project Structure
+# 6. Current Project Structure
 
 ```text
 certificate-eligibility-board/
@@ -202,14 +203,12 @@ certificate-eligibility-board/
 |   |   `-- evaluator.js
 |   |
 |   |-- ui/
-|   |   |-- participantTable.js
-|   |   |-- resultTable.js
-|   |   |-- categoryProgress.js
-|   |   `-- validationPanel.js
+|   |   |-- participants.js
+|   |   `-- results.js
 |   |
 |   |-- constants.js
 |   |-- main.js
-|   `-- styles.css
+|   `-- style.css
 |
 |-- tests/
 |   |-- validation.test.js
@@ -244,7 +243,7 @@ certificate-eligibility-board/
 }
 ```
 
-The activity input is stored as text initially because this allows the UI to represent:
+Completed activities remain stored as a comma-separated string. The UI presents that string as removable chips plus a small text box and Add button, which still allows it to represent:
 
 - Normal activity lists
 - Unknown activity IDs
@@ -689,9 +688,11 @@ ID ascending within each status
 
 ---
 
-# 16. How AI Shaped the Design
+# 16. AI Prompting Strategy
 
 AI was used as a **design partner**, not as an unquestioned code generator.
+
+Prompts translated the problem statement one concern at a time: framework choice, policy boundaries, validation contracts, evaluator output, acceptance tests, and finally UI refinements. Follow-up prompts repeatedly added constraints such as "keep it simple," "do not change domain logic," and "remove the dropdown" when a suggestion became more complex than the value it provided.
 
 The workflow was:
 
@@ -749,8 +750,6 @@ was considered.
 Vanilla JavaScript   SELECTED
 Vite                 SELECTED
 Vitest               SELECTED
-JSDoc                SELECTED
-ESLint                SELECTED
 
 React                DEFERRED
 TypeScript           DEFERRED
@@ -820,7 +819,21 @@ AI helps enumerate edge cases, after which the tests are manually reviewed again
 
 ---
 
-# 20. AI Usage Philosophy
+# 20. AI-Influenced Decision Making
+
+AI recommendations were evaluated against correctness, simplicity, code ownership, and live-modification cost. The final choices were not always the first suggestions:
+
+| Area | Recommendation or option considered | Final choice and trade-off |
+|---|---|---|
+| UI framework | React and TypeScript | Vanilla JavaScript kept the single-screen application easier to explain and modify |
+| Eligibility design | Generic rules or strategy objects | A policy object plus pure functions captured the useful separation without framework code |
+| Activity lookup | Rebuild lookup inside each participant evaluation | Create one `Map` for the batch and reuse it |
+| Validation output | Boolean validity | Structured error objects support exact tests and useful messages |
+| Rendering structure | Create many UI modules up front | Keep rendering together initially, then extract only `participants.js` and `results.js` when `main.js` grew |
+| Participant deletion | Delete only the final row | Accept an entered participant ID and remove the matching record with `findIndex()` and `splice()` |
+| Activity entry | Native datalist suggestions plus chips | Remove the suggestion dropdown; retain manual text entry, Add, and removable chips so unknown IDs and duplicates remain testable |
+
+The evaluator assumes input has passed validation, IDs remain case-sensitive, empty activity lists are valid, and local rerendering is acceptable for this small data set. These assumptions were kept explicit so AI did not silently expand the system scope.
 
 The goal was not:
 
@@ -862,8 +875,8 @@ I test the final decision
 | Maintainability | ES modules and separated responsibilities |
 | Synchronization | UI consumes the same derived evaluation data |
 | Developer Experience | Vite |
-| Code Quality | ESLint |
-| Documentation | JSDoc |
+| Code Quality | Automated tests and production builds |
+| Documentation | Markdown design and process records |
 | Understandability | Avoid unfamiliar or unnecessary abstractions |
 
 ---
@@ -873,7 +886,7 @@ I test the final decision
 | Deferred Feature / Technology | Reason |
 |---|---|
 | React | Single-screen UI does not justify framework overhead |
-| TypeScript | JSDoc is sufficient for the current domain size |
+| TypeScript | Small modules and focused tests are sufficient for the current domain size |
 | Express / Backend API | All processing is local |
 | Database | No persistence requirement |
 | Authentication | Outside the requested scope |
@@ -994,7 +1007,7 @@ Implement:
 ```text
 Unit tests
 Acceptance tests
-ESLint
+Production build verification
 README / Documentation
 AI prompt log
 Screenshots / test output
@@ -1109,8 +1122,6 @@ CSS3
 Vanilla JavaScript ES6+
 Vite
 Vitest
-ESLint
-JSDoc
 Git
 ```
 
@@ -1152,7 +1163,7 @@ A concise explanation:
 
 > I started by prioritizing correctness, testability, explainability, and live modification because those were central to the problem. I initially considered React and TypeScript, but after reviewing the actual application scope with AI, I decided they added more abstraction than value for a single-screen local-data application.
 >
-> I therefore chose vanilla JavaScript with Vite, Vitest, ESLint, and JSDoc. I still kept the application modular by separating parsing, validation, evaluation, and presentation.
+> I therefore chose vanilla JavaScript with Vite and Vitest. I kept the application modular by separating parsing, validation, evaluation, participant rendering, and result rendering.
 >
 > The main architectural decision was to make eligibility configuration-driven. The point threshold and required categories exist in one policy object rather than being hardcoded throughout the application. The evaluator produces an explainable result containing points, covered categories, missing categories, eligibility status, and ordered failure reasons.
 >
@@ -1177,4 +1188,3 @@ The engineering value comes from:
 - Automated acceptance testing
 - Requirement-driven AI usage
 - Easy live modification
-

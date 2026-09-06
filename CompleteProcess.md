@@ -23,9 +23,11 @@ This document focuses on the work completed up to the current checkpoint:
 - integrating the domain logic with a simple one-page UI
 - adding editable participant inputs
 - adding participant rows
-- deleting participant rows
+- deleting a participant by entered ID
+- extracting participant and result rendering into focused UI modules
+- adding manual completed-activity entry with removable chips
 - displaying eligible and ineligible counts
-- displaying category progress
+- displaying a three-segment category-progress strip
 - displaying point progress
 
 The document is organized around the evaluation criteria provided for the interview.
@@ -660,7 +662,7 @@ The user then refined the requirement:
 
 > “I don't think we need to add delete column of participant table functionality. I think we should only add a participant row and delete a participant row. Yes. Let's do that.”
 
-### Final design
+### Design at that checkpoint
 
 The UI used two simple actions:
 
@@ -683,7 +685,7 @@ and:
 currentParticipants.pop()
 ```
 
-This avoided per-row delete state, per-row event handling, or additional identifiers.
+This avoided per-row delete state, per-row event handling, or additional identifiers. A later live-modification prompt replaced last-row deletion with deletion by entered participant ID; that evolution is documented in Section 2.13 and Section 4.9.
 
 ---
 
@@ -720,6 +722,71 @@ This preserved the distinction between:
 Business logic -> evaluator
 Display logic  -> UI
 ```
+
+---
+
+## 2.12 Prompt - Add the Optional Category Strip
+
+User prompt:
+
+> "Add a compact three-segment category-progress strip driven by the same derived category set."
+
+This prompt contained an important technical constraint: the new visual could not introduce another category calculation. The implementation therefore reads `result.coveredCategories`, which already comes from the evaluator, and renders one segment for each required policy category.
+
+The point progress remained a native `<progress>` element. Only category progress received the small custom strip required by the prompt.
+
+---
+
+## 2.13 Prompt - Refine Participant Deletion and UI Boundaries
+
+The participant deletion requirement was refined with this prompt:
+
+> "implement it such that I can type the id of the participant and then clicking on delete participant will delete that participant if the participant with that id is present if not present then show participant does not exist for 1 second"
+
+The technical specification became:
+
+- trim the entered participant ID
+- find the matching participant with `findIndex()`
+- remove exactly that participant with `splice()`
+- show temporary inline feedback for a missing ID
+- keep deletion outside the participant table
+
+Later, the user identified that `main.js` had accumulated too many rendering responsibilities:
+
+> "main.js is getting too long add render participants and related logic in another file and render results and related logic in another file"
+
+This led to two focused UI modules:
+
+```text
+ui/participants.js
+ui/results.js
+```
+
+State changes and the parse/validate/evaluate workflow remained in `main.js`. The refactor changed code organization without changing eligibility behavior.
+
+---
+
+## 2.14 Prompt - Simplify Completed-Activity Entry
+
+One prompt explored a datalist, Add button, and removable activity chips while requiring the stored value to remain a comma-separated string. The user then reviewed the result and narrowed it:
+
+> "remove the suggestions in the drop down remove the dropdown altogether this is increasing the lines of code too much only keep the functionality of adding activity id using a text box and chips only"
+
+The final UI keeps:
+
+- a small text box
+- an Add button
+- removable activity chips
+- manual unknown IDs such as `A99`
+- repeated IDs so `DUPLICATE_PARTICIPATION` can still be demonstrated
+
+The suggestion list and its activity-data dependency were removed. Event handling was also consolidated through delegation to reduce repeated listeners. The domain representation stayed unchanged:
+
+```text
+"A01, A02, A03"
+```
+
+This is a concrete example of iterative prompting removing an AI-assisted feature after its complexity was judged to exceed its value.
 
 ---
 
@@ -965,9 +1032,9 @@ During refinement, the `Map` was moved outside the individual participant evalua
 
 ---
 
-## 3.11 Why Native `<progress>` Was Used
+## 3.11 Why Native `<progress>` and a Small Category Strip Were Used
 
-When point and category progress were added, a custom progress component was unnecessary.
+Point progress uses the browser-native element:
 
 HTML already provides:
 
@@ -975,14 +1042,30 @@ HTML already provides:
 <progress value="2" max="3"></progress>
 ```
 
-Using the native element reduced:
+Using the native element for points reduced:
 
 - custom CSS
 - custom rendering logic
 - accessibility work
 - extra JavaScript
 
-This is consistent with the project's general principle of using browser capabilities before adding abstractions.
+The optional category display uses three small segments because it communicates which of `LEARN`, `BUILD`, and `SHARE` are covered. Those segments are driven by `result.coveredCategories`; they do not recalculate category membership or eligibility in the UI.
+
+This is consistent with the project's principle of using browser capabilities first and adding custom presentation only for a concrete requirement.
+
+---
+
+## 3.12 UI Module Boundary
+
+UI code was initially kept in `main.js` to avoid speculative component files. After participant controls and result rendering made the file genuinely long, only two modules were extracted:
+
+```text
+ui/participants.js  -> participant markup and participant events
+ui/results.js       -> validation, summary, progress, and result markup
+main.js             -> state and application workflow
+```
+
+This keeps the domain modules independent from the DOM while avoiding a component framework or a large UI hierarchy. Participant controls use delegated events so adding rows or activity chips does not require a separate listener architecture for every rendered item.
 
 ---
 
@@ -1047,7 +1130,7 @@ The reason was that `main.js` was still small enough to understand easily.
 
 The user wanted implementation simplicity, so modules would be extracted only after real complexity justified them.
 
-This demonstrates that the design document was treated as a guide rather than a rigid requirement.
+When `main.js` later became long, the code was split into only `ui/participants.js` and `ui/results.js`, not the four speculative modules above. This demonstrates that the design document was treated as a guide rather than a rigid requirement.
 
 ---
 
@@ -1164,7 +1247,7 @@ The trade-off is that the page section is rerendered, but for a small local appl
 
 ---
 
-## 4.9 Decision Example — User Rejected Per-Row Delete Buttons
+## 4.9 Decision Example — Participant Deletion Evolved Through Review
 
 The AI initially suggested adding a Delete button to every participant row.
 
@@ -1174,21 +1257,28 @@ User refinement:
 
 > “I don't think we need to add delete column of participant table functionality. I think we should only add a participant row and delete a participant row.”
 
-The final implementation used:
+The first simplified implementation used:
 
 ```js
 push()
 pop()
 ```
 
-This reduced:
+This initially reduced:
 
 - UI clutter
 - event-handler complexity
 - extra table columns
 - per-row deletion logic
 
-This is one of the clearest examples of AI influence without AI ownership of the final decision.
+During a later live modification, the user required deletion by entered participant ID. The final handler now uses:
+
+```js
+findIndex()
+splice()
+```
+
+The revised design retains one table-level delete control but can target any participant. A missing ID produces temporary feedback instead of changing the data. This is one of the clearest examples of AI influence without AI ownership of the final decision: the interface changed twice as the user clarified the desired trade-off between simplicity and control.
 
 ---
 
@@ -1222,6 +1312,31 @@ result.coveredCategories
 for display.
 
 This preserves a single source of truth for business logic.
+
+---
+
+## 4.11 Decision Example — Removing the Activity Suggestion Dropdown
+
+AI implemented a native datalist after the user requested known-activity suggestions, manual unknown IDs, duplicates, and removable chips.
+
+After reviewing the result, the user decided the suggestion feature added too much code. The follow-up prompt explicitly removed the dropdown while retaining the useful parts of the interaction.
+
+Final choice:
+
+```text
+Text box + Add button + removable chips
+```
+
+Preserved behavior:
+
+- known IDs can be typed normally
+- unknown IDs reach `UNKNOWN_ACTIVITY` validation
+- duplicate IDs reach `DUPLICATE_PARTICIPATION` validation
+- removing a chip removes one occurrence
+- the underlying value remains comma-separated text
+- activity changes clear stale output
+
+The trade-off is that users no longer receive suggestions, but the code and interface are smaller and every validation scenario remains demonstrable.
 
 ---
 
@@ -1923,7 +2038,7 @@ Add Participant Row
 Delete Participant Row
 ```
 
-### Final implementation
+### Implementation at that checkpoint
 
 ```js
 push()
@@ -1931,6 +2046,10 @@ pop()
 ```
 
 This was intentionally simpler than per-row deletion.
+
+### Later live refinement
+
+Deletion was later changed from `pop()` to one table-level ID input using `findIndex()` and `splice()`. This added precise targeting without adding a delete button to every row.
 
 ---
 
@@ -1940,16 +2059,32 @@ This was intentionally simpler than per-row deletion.
 
 Display more of the already-derived evaluation state without changing business logic.
 
-### Implemented / current target
+### Implemented
 
 - eligible count
 - ineligible count
-- category progress
+- three-segment category progress
 - point progress
 
 ### Design rule
 
 The UI consumes evaluator output instead of recreating eligibility rules.
+
+---
+
+## Iteration 5 — Focused UI Extraction and Activity Entry
+
+### Implemented
+
+- moved participant markup and events to `ui/participants.js`
+- moved validation, summary, progress, and result rendering to `ui/results.js`
+- retained state and application workflow in `main.js`
+- replaced the raw completed-activities field with manual text entry, Add, and removable chips
+- kept the underlying comma-separated string and all domain logic unchanged
+
+### Refinement
+
+A datalist suggestion version was tried and then removed after review. The final text-only entry keeps unknown and duplicate IDs possible while using less code.
 
 ---
 
@@ -1967,6 +2102,10 @@ certificate-eligibility-board/
 |   |   |-- parser.js
 |   |   |-- validation.js
 |   |   `-- evaluator.js
+|   |
+|   |-- ui/
+|   |   |-- participants.js
+|   |   `-- results.js
 |   |
 |   |-- constants.js
 |   |-- main.js
@@ -2044,7 +2183,7 @@ The following are not currently needed and therefore remain deferred:
 - generic rule engine
 - component framework
 - design system
-- custom progress-bar component
+- progress or chart component library
 - cloud deployment architecture
 - complex state management
 
@@ -2066,9 +2205,9 @@ A concise but detailed explanation would be:
 >
 > After the domain logic and tests were stable, I implemented reset before building out the UI. Reset simply replaces the current participant state with a fresh copy of the original data and renders again. That made state restoration deterministic and automatically cleared stale outputs.
 >
-> In the UI iteration, I kept the interface in plain JavaScript. The UI does not calculate eligibility; it only passes parsed and validated data to the evaluator and renders the result. When AI initially suggested a Delete button on every participant row, I rejected that approach and simplified the interface to one Add Participant Row button and one Delete Participant Row button. The implementation therefore only needs `push()` and `pop()`.
+> In the UI iteration, I kept the interface in plain JavaScript. The UI does not calculate eligibility; it only passes parsed and validated data to the evaluator and renders the result. When AI initially suggested a Delete button on every participant row, I rejected that approach and kept one table-level delete control. A later prompt refined that control to accept a participant ID, find the matching row, and remove it with `findIndex()` and `splice()`.
 >
-> The latest refinement adds eligible and ineligible counts, category progress, and point progress. Those values are derived from the evaluator's result rather than duplicating business rules in the presentation layer. I also used the browser's native progress element instead of building a custom progress component. Overall, AI influenced the solution, but each recommendation was reviewed against the actual problem scope, simplicity, testability, and my ability to explain and modify the code live.
+> Later refinements added eligible and ineligible counts, point progress, and the optional three-segment category strip. Those values are derived from evaluator results rather than duplicating business rules in the presentation layer. Rendering was extracted into two focused UI modules only after `main.js` grew. For activity entry, I tried AI-assisted datalist suggestions, reviewed the code cost, removed the dropdown, and kept only manual text entry, Add, and removable chips. Overall, AI influenced the solution, but every recommendation was reviewed against scope, simplicity, testability, and my ability to explain and modify the code live.
 
 ---
 
@@ -2083,8 +2222,11 @@ The strongest examples to show during the interview are:
 5. **Evaluator refinement** — repeated Map construction was identified and improved without adding architecture.
 6. **Configuration test** — proved that eligibility thresholds were actually configurable rather than documented only.
 7. **Reset-first sequencing** — the user changed the implementation order at a meaningful checkpoint.
-8. **Delete UI rejection** — the user rejected AI's per-row delete-button idea and chose a simpler row-level control model.
-9. **Progress display** — reused evaluator output and native HTML rather than duplicating business logic or building custom components.
+8. **Delete UI evolution** — the user rejected per-row buttons, then refined last-row deletion into one typed-ID delete control.
+9. **Progress display** — point progress uses native HTML and the optional category strip reuses the evaluator's derived category set.
+10. **Justified module extraction** — participant and result UI modules were created only after `main.js` developed real rendering responsibilities.
+11. **Activity-entry simplification** — a datalist suggestion feature was implemented, reviewed, and removed while text entry and chips were retained.
+12. **Continuous verification** — focused changes were followed by the existing Vitest suite and production build.
 
 These examples demonstrate that the development process was not "AI generated the application." It was:
 
@@ -2129,15 +2271,17 @@ Reset logic               DONE
 Basic one-page UI         DONE
 Editable participant rows DONE
 Add participant row       DONE
-Delete participant row    DONE
-Eligible count            CURRENT / IMPLEMENTED NEXT
-Ineligible count          CURRENT / IMPLEMENTED NEXT
-Category progress         CURRENT / IMPLEMENTED NEXT
-Point progress            CURRENT / IMPLEMENTED NEXT
+Delete participant by ID  DONE
+Participant UI module     DONE
+Result UI module          DONE
+Manual activity Add/chips DONE
+Eligible count            DONE
+Ineligible count          DONE
+Category progress strip   DONE
+Point progress            DONE
 Final visual polish       DEFERRED
 ```
 
 The most important design principle remains:
 
 > **Simple technology, disciplined architecture, and visible iterative refinement.**
-

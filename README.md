@@ -155,17 +155,22 @@ certificate-eligibility-board/
 │   ├── data/
 │   │   └── sampleData.js
 │   │
-│   └── domain/
-│       ├── parser.js
-│       ├── validation.js
-│       └── evaluator.js
+│   ├── domain/
+│   │   ├── parser.js
+│   │   ├── validation.js
+│   │   └── evaluator.js
+│   │
+│   └── ui/
+│       ├── participants.js
+│       └── results.js
 │
 ├── tests/
 │   ├── validation.test.js
 │   └── evaluator.test.js
 │
-├── Cisco_Certificate_Eligibility_Board_Design_Documentation.md
-└── Cisco_Iterative_Development_and_AI_Collaboration.md
+├── ArchitectureAndRequiremnts.md
+├── CompleteProcess.md
+└── Documentation.md
 ```
 
 ---
@@ -234,7 +239,15 @@ Stores the configurable eligibility policy.
 
 **`main.js`**
 
-Handles browser state, user events, and UI rendering.
+Coordinates browser state and the parse/validate/evaluate workflow.
+
+**`ui/participants.js`**
+
+Renders participant inputs and handles participant/activity controls.
+
+**`ui/results.js`**
+
+Renders validation messages, summary counts, progress, and results.
 
 ---
 
@@ -548,17 +561,27 @@ Delete Participant Row
 
 This kept the UI and state-management logic simpler.
 
+The interview evaluation evidence is organized around:
+
+- **AI Prompting Strategy** - the requirement, architecture, validation, testing, and refinement prompts used during development
+- **Design Constraints and Technology Choices** - the simplicity, local-only, separation-of-concerns, and technology constraints given to AI
+- **AI-Influenced Decision Making** - accepted, refined, and rejected recommendations with their assumptions and trade-offs
+
 ---
 
 ## Documentation
 
 Detailed design decisions are available in:
 
-[`Cisco_Certificate_Eligibility_Board_Design_Documentation.md`](./Cisco_Certificate_Eligibility_Board_Design_Documentation.md)
+[`ArchitectureAndRequiremnts.md`](./ArchitectureAndRequiremnts.md)
 
 The complete iterative AI-assisted development record, including prompts and design changes, is available in:
 
-[`Cisco_Iterative_Development_and_AI_Collaboration.md`](./Cisco_Iterative_Development_and_AI_Collaboration.md)
+[`CompleteProcess.md`](./CompleteProcess.md)
+
+A concise interview-ready summary is available in:
+
+[`Documentation.md`](./Documentation.md)
 
 ---
 

@@ -83,7 +83,61 @@ The overall plan remained stable, but I deliberately changed the order when usef
 
 ---
 
-## 3. Technology Choices
+## 3. AI Prompting Strategy
+
+I used AI through small prompts that translated one part of the problem statement at a time. I did not use a single prompt asking AI to build the entire application.
+
+### Requirement and architecture prompts
+
+> Analyze this problem statement and separate fixed data, editable input, validation contracts, eligibility rules, deterministic ordering, reset behavior, and acceptance tests. Return a short implementation plan with useful checkpoints.
+
+This produced the four-stage plan used by the project: parsing and validation, evaluation, minimal UI and reset, then UI refinement.
+
+> Analyze this problem statement and compare Vanilla JavaScript, React + JavaScript, and React + TypeScript. Consider application complexity, testing, maintainability, live modification, and unnecessary dependencies.
+
+This converted the scope constraints into a technology decision instead of selecting a framework by default.
+
+> Identify which parts of the eligibility specification are business-policy values that may change and which parts are stable application logic. Recommend a simple way to avoid hardcoding without overengineering the solution.
+
+This led to `ELIGIBILITY_POLICY` plus pure evaluator functions rather than a generic rule engine.
+
+### Validation and testing prompt
+
+> Convert the acceptance criteria into deterministic automated test cases. Include the built-in oracle, exact point boundary, empty completion list, duplicate participation, duplicate participant IDs, unknown activity, failure-reason ordering, and participant ordering.
+
+The generated cases were checked against the problem statement before being implemented in Vitest.
+
+### Iterative refinement prompts
+
+The broad specifications were narrowed through prompts such as:
+
+> "ok let's start with iteration 1 remember to keep it simple"
+
+> "remember to keep the implementation clean and simple"
+
+> "main.js is getting too long add render participants and related logic in another file and render results and related logic in another file"
+
+> "remove the suggestions in the drop down remove the dropdown altogether"
+
+These prompts did more than request features: they constrained scope, controlled when abstractions were introduced, and removed UI complexity that did not justify its code cost.
+
+---
+
+## 4. Design Constraints and Technology Choices
+
+The following constraints were repeatedly provided to AI:
+
+- keep the application local and single-screen
+- use Vanilla JavaScript and browser APIs
+- do not add React, TypeScript, a backend, a database, authentication, or persistence
+- keep parsing, validation, evaluation, and rendering separate
+- keep eligibility policy in one configuration object
+- keep the UI dependent on evaluator output rather than recalculating eligibility
+- preserve exact validation codes, failure-reason order, and result ordering
+- allow unknown and duplicate activity IDs to reach validation
+- prefer small functions, ES modules, and standard data structures
+- add abstractions only after the code demonstrates a real need
+- verify changes with tests and a production build
 
 | Area | Choice | Reason |
 |---|---|---|
@@ -117,7 +171,7 @@ My principle was:
 
 ---
 
-## 4. Architecture
+## 5. Architecture
 
 ```text
 Participant Input
@@ -162,7 +216,13 @@ constants.js
     Contains eligibility policy
 
 main.js
-    Browser state, event handling, and rendering
+    Browser state and application workflow
+
+ui/participants.js
+    Participant inputs, activity chips, and participant actions
+
+ui/results.js
+    Validation, summary, progress, and result rendering
 ```
 
 The important architectural rule is:
@@ -173,7 +233,7 @@ The UI only displays results produced by the domain layer.
 
 ---
 
-## 5. Main Design Decisions
+## 6. Main Design Decisions
 
 ### Configuration-Driven Eligibility
 
@@ -279,7 +339,7 @@ Pure evaluation logic
 
 ---
 
-## 6. Validation
+## 7. Validation
 
 The required validation codes are:
 
@@ -317,7 +377,7 @@ Validation is performed before eligibility evaluation so the evaluator can work 
 
 ---
 
-## 7. Expected Built-In Results
+## 8. Expected Built-In Results
 
 | Participant | Points | Status | Failure reason |
 |---|---:|---|---|
@@ -357,7 +417,7 @@ Participant ID ascending inside each group
 
 ---
 
-## 8. Testing Strategy
+## 9. Testing Strategy
 
 I focused automated tests on deterministic domain behavior rather than browser styling.
 
@@ -397,7 +457,7 @@ This simultaneously checks the point threshold and category requirement.
 
 ---
 
-## 9. How AI Influenced the Project
+## 10. AI-Influenced Decision Making
 
 AI was used as a **development partner**, not as a one-shot application generator.
 
@@ -421,6 +481,30 @@ Accept, reject, or refine
     v
 Implement and test
 ```
+
+The main assumptions given to and reviewed with AI were:
+
+- evaluation receives parsed and validated activity IDs
+- participant and activity IDs remain case-sensitive
+- an empty activity list is valid
+- all state is local and in memory
+- rerendering the small screen is an acceptable reset/update strategy
+- the fixed activity table is the source of truth for points and categories
+
+Important decisions and trade-offs included:
+
+| Decision | AI contribution | Final engineering judgment |
+|---|---|---|
+| Vanilla JavaScript | Compared framework options | React and TypeScript were unnecessary for one local screen |
+| Policy plus pure evaluator | Suggested separating policy from logic | Kept the separation but rejected a generic rule engine |
+| `Map` activity lookup | Identified repeated lookup work | Build one map per participant batch, not one per participant |
+| `Set` category coverage | Recommended uniqueness semantics | Reused the derived set for eligibility and category progress |
+| Structured validation errors | Proposed machine-readable errors | Retained them because they support exact tests and clear UI output |
+| UI modules | Suggested possible component splits | Extracted only `participants.js` and `results.js` after `main.js` genuinely grew |
+| Participant deletion | Initially used last-row deletion | Refined to typed-ID deletion using `findIndex()` and `splice()` |
+| Completed-activity UX | Explored a datalist and chips | Rejected the suggestion dropdown; kept a text box, Add button, and removable chips |
+
+AI recommendations were therefore treated as proposals. They were accepted when they improved correctness or clarity, refined when too broad, and removed when their complexity was not justified.
 
 ### Example 1 — Simplifying the Initial Project
 
@@ -484,7 +568,7 @@ The refinement improved the implementation without introducing classes or additi
 
 ---
 
-## 10. What I Prioritized and Deferred
+## 11. What I Prioritized and Deferred
 
 ### Prioritized
 
@@ -511,7 +595,7 @@ These were not omitted because they are difficult; they were omitted because the
 
 ---
 
-## 11. Live Modification Readiness
+## 12. Live Modification Readiness
 
 The architecture makes likely interview changes localized.
 
@@ -550,7 +634,8 @@ and its focused test.
 Update rendering in:
 
 ```text
-main.js
+ui/participants.js
+ui/results.js
 ```
 
 without modifying the eligibility evaluator.
@@ -559,7 +644,7 @@ This separation reduces the risk that a small live modification breaks unrelated
 
 ---
 
-## 12. Interview Demonstration Order
+## 13. Interview Demonstration Order
 
 For a short interview presentation, I would demonstrate the project in this order:
 
@@ -645,14 +730,14 @@ Point out the boundary, empty-list, validation, and ordering tests.
 
 ---
 
-## 13. Documentation Structure
+## 14. Documentation Structure
 
 Use this document during the interview.
 
 Keep:
 
 ```text
-Cisco_Iterative_Development_and_AI_Collaboration.md
+CompleteProcess.md
 ```
 
 as the detailed evidence trail containing:
